@@ -1,7 +1,9 @@
 import { useState } from "react"
+import AddUserModal from "./AddUserModal"
 
 function Users() {
 	const [search, setSearch] = useState("")
+	const [openModal, setOpenModal] = useState(false)
 
 	const users = [
 		{ id: 1, name: "John Doe", email: "john@gmail.com", role: "User" },
@@ -16,7 +18,7 @@ function Users() {
 	return (
 		<div className="page">
 
-			{/* TOP BAR */}
+			{/* HEADER */}
 			<div className="page-header">
 				<div>
 					<h2>Users</h2>
@@ -31,7 +33,12 @@ function Users() {
 						onChange={(e) => setSearch(e.target.value)}
 					/>
 
-					<button className="primary">Add Member</button>
+					<button 
+						className="primary"
+						onClick={() => setOpenModal(true)}
+					>
+						Add Member
+					</button>
 				</div>
 			</div>
 
@@ -74,6 +81,13 @@ function Users() {
 					</tbody>
 				</table>
 			</div>
+
+			{/* MODAL */}
+			<AddUserModal 
+				isOpen={openModal} 
+				onClose={() => setOpenModal(false)} 
+			/>
+
 		</div>
 	)
 }
