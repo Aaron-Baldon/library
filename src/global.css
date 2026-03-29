@@ -987,3 +987,282 @@ button.primary {
 button.primary:hover {
 	background: #43a047;
 }
+
+/* USERS PAGE */
+.users-page {
+	background: #f5f1e8;
+	padding: 20px;
+}
+
+/* HEADER */
+
+.users-header h2 {
+	margin-bottom: 4px;
+}
+
+.breadcrumb {
+	font-size: 12px;
+	color: #888;
+}
+
+/* TOP BAR */
+.users-topbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+	gap: 10px;
+}
+
+.users-topbar input {
+	padding: 8px;
+	border-radius: 6px;
+	border: 1px solid #ddd;
+	width: 200px;
+}
+
+.users-topbar select {
+	padding: 8px;
+	border-radius: 6px;
+	border: 1px solid #ddd;
+}
+
+/* TABLE CONTAINER */
+.users-table {
+	background: white;
+	border-radius: 12px;
+	padding: 15px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* TABLE */
+.users-table table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.users-table th {
+	text-align: left;
+	color: #888;
+	padding-bottom: 10px;
+}
+
+.users-table td {
+	padding: 10px 0;
+	border-bottom: 1px solid #eee;
+}
+
+/* ACTION BUTTONS */
+.icon-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	margin-right: 5px;
+	font-size: 14px;
+}
+
+.icon-btn.delete {
+	color: red;
+}
+
+.users-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.users-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.users-actions input {
+	padding: 8px 10px;
+	border-radius: 6px;
+	border: 1px solid #ddd;
+	width: 200px;
+}
+
+/* BUTTONS */
+.btn {
+	padding: 6px 10px;
+	border-radius: 6px;
+	border: 1px solid #ddd;
+	background: white;
+	cursor: pointer;
+	font-size: 12px;
+}
+
+.btn.delete {
+	color: red;
+	border-color: #f5c6c6;
+}
+
+/* EMPTY */
+.no-data {
+	text-align: center;
+	padding: 20px;
+	color: #888;
+}
+
+.btn::before,
+.btn::after {
+	content: none !important;
+	background: none !important;
+}
+
+/* PAGE */
+.page {
+	background: #f5f1e8;
+	padding: 20px;
+}
+
+/* HEADER (SHARED) */
+.page-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.breadcrumb {
+	font-size: 12px;
+	color: #888;
+}
+
+/* ACTIONS (SEARCH + BUTTON) */
+.page-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.page-actions input {
+	padding: 8px 12px;
+	border-radius: 20px;
+	border: none;
+	background: #f0f0f0;
+	width: 220px;
+	outline: none;
+}
+
+/* BUTTON */
+button.primary {
+	background: #4caf50;
+	color: white;
+	padding: 8px 16px;
+	border-radius: 20px;
+	border: none;
+	cursor: pointer;
+}
+
+button.primary:hover {
+	background: #43a047;
+}
+
+/* TABLE CONTAINER */
+.table-card {
+	background: white;
+	border-radius: 12px;
+	padding: 15px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* TABLE */
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.table th {
+	text-align: left;
+	color: #888;
+	padding-bottom: 10px;
+}
+
+.table td {
+	padding: 10px 0;
+	border-bottom: 1px solid #eee;
+}
+
+/* BUTTONS */
+.btn {
+	padding: 6px 12px;
+	border-radius: 6px;
+	border: 1px solid #ddd;
+	background: white;
+	cursor: pointer;
+	font-size: 12px;
+}
+
+.btn.delete {
+	color: #e74c3c;
+	border-color: #f5c6c6;
+}
+
+/* REMOVE ICONS */
+.btn::before,
+.btn::after {
+	content: none !important;
+}
+
+/* PAGE */
+.page {
+	padding: 20px;
+	background: #f5f1e8;
+}
+
+/* HEADER */
+.page-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+/* TITLE SIDE */
+.page-header h2 {
+	font-size: 20px;
+	margin-bottom: 4px;
+}
+
+/* BREADCRUMB */
+.breadcrumb {
+	font-size: 12px;
+	color: #888;
+}
+
+/* RIGHT SIDE (SEARCH + BUTTON) */
+.page-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* SEARCH */
+.page-actions input {
+	padding: 8px 14px;
+	border-radius: 20px;
+	border: none;
+	background: #f0f0f0;
+	width: 220px;
+}
+
+/* BUTTON */
+button.primary {
+	padding: 8px 16px;
+	border-radius: 20px;
+	background: #4caf50;
+	color: white;
+	border: none;
+	cursor: pointer;
+}
+
+/* TABLE SPACING FIX */
+.table-card {
+	margin-top: 10px;
+}

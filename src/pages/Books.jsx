@@ -7,33 +7,24 @@ function Books() {
 	]
 
 	return (
-		<div className="books-page">
+		<div className="page">
 
 			{/* HEADER */}
-			<div className="books-header">
+			<div className="page-header">
 				<div>
-					<h2>Library</h2>
-					<p className="breadcrumb">Home / Library Books</p>
+					<h2>Books</h2>
+					<div className="breadcrumb">Dashboard / Books</div>
 				</div>
 
-				<button className="primary">+ Add Book</button>
-			</div>
-
-			{/* TOP BAR */}
-			<div className="books-topbar">
-				<h3>All Books</h3>
-
-				<div className="books-actions">
-					<input placeholder="Search by name..." />
-					<select>
-						<option>Last 30 days</option>
-					</select>
+				<div className="page-actions">
+					<input placeholder="Search books..." />
+					<button className="primary">Add Book</button>
 				</div>
 			</div>
 
 			{/* TABLE */}
-			<div className="books-table">
-				<table>
+			<div className="table-card">
+				<table className="table">
 					<thead>
 						<tr>
 							<th></th>
@@ -58,8 +49,8 @@ function Books() {
 								<td>{book.class}</td>
 								<td>{book.date}</td>
 								<td>
-									<button className="icon-btn">✏️</button>
-									<button className="icon-btn delete">🗑</button>
+									<button className="btn">Edit</button>
+									<button className="btn delete">Delete</button>
 								</td>
 							</tr>
 						))}

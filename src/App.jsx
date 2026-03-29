@@ -8,6 +8,7 @@ import Profile from "./pages/Profile"
 import AdminLayout from "./layouts/AdminLayout"
 import UserLayout from "./layouts/UserLayout"
 import Books from "./pages/Books"
+import Users from "./pages/Users"
 
 function App() {
 	return (
@@ -50,6 +51,15 @@ function App() {
 					element={
 						<AdminLayout>
 							<Books />
+						</AdminLayout>
+					}
+				/>
+
+				<Route
+					path="/users"
+					element={
+						<AdminLayout>
+							<Users />
 						</AdminLayout>
 					}
 				/>
