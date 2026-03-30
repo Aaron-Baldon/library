@@ -1,8 +1,19 @@
-function BookDetailsModal({ isOpen, onClose, book, role }) {
+import { createPortal } from "react-dom"
+import { useEffect } from "react"
+
+function BookDetailsModal({ isOpen, onClose, book, role, onBorrow }) {
+
+	useEffect(() => {
+		const handleEsc = (e) => {
+			if (e.key === "Escape") onClose()
+		}
+		window.addEventListener("keydown", handleEsc)
+		return () => window.removeEventListener("keydown", handleEsc)
+	}, [onClose])
 
 	if (!isOpen || !book) return null
 
-	return (
+	return createPortal(
 		<div className="modal-overlay" onClick={onClose}>
 			<div className="modal book-modal" onClick={(e) => e.stopPropagation()}>
 
@@ -16,12 +27,11 @@ function BookDetailsModal({ isOpen, onClose, book, role }) {
 						<p className="date">{book.date}</p>
 
 						<p className="desc">
-							This is a sample description of the book. You can replace this with real data.
+							This is a sample description of the book.
 						</p>
 
 						<div className="modal-actions">
 
-							{/* ADMIN ONLY */}
 							{role === "admin" && (
 								<>
 									<button className="primary">Edit</button>
@@ -29,19 +39,27 @@ function BookDetailsModal({ isOpen, onClose, book, role }) {
 								</>
 							)}
 
-							{/* USER ONLY */}
-							{role === "user" && (
-								<button className="primary">Return Book</button>
+							{role === "user" && onBorrow && (
+								<button 
+									className="primary"
+									onClick={() => onBorrow(book)}
+								>
+									Borrow Book
+								</button>
 							)}
 
-							<button className="cancel" onClick={onClose}>Close</button>
+							<button className="cancel" onClick={onClose}>
+								Close
+							</button>
+
 						</div>
 					</div>
 
 				</div>
 
 			</div>
-		</div>
+		</div>,
+		document.body
 	)
 }
 

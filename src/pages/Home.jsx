@@ -62,15 +62,13 @@ function Home() {
 						key={i}
 						onClick={() => setSelectedBook(book)}
 					>
-						<img src={book.image} />
+						<img src={book.image} alt={book.name} />
 
-						{/* SAME STRUCTURE SA BOOKS */}
 						<div className="book-info">
 							<h4>{book.name}</h4>
 							<p>{book.author}</p>
 							<span>{book.date}</span>
 						</div>
-
 					</div>
 				))}
 			</div>
@@ -91,6 +89,10 @@ function Home() {
 				book={selectedBook}
 				role="user"
 				onClose={() => setSelectedBook(null)}
+				onBorrow={(book) => {
+					console.log("Borrowed:", book)
+					setSelectedBook(null)
+				}}
 			/>
 
 		</div>

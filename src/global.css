@@ -1347,6 +1347,7 @@ button.primary {
 	width: 100%;
 	max-width: 160px; /* control size */
 }
+
 .book-card:hover {
 	transform: translateY(-4px);
 	box-shadow: 0 6px 20px rgba(0,0,0,0.15);
@@ -1536,4 +1537,8 @@ button.primary {
 	gap: 20px;
 	overflow-x: auto;
 	padding-bottom: 10px;
+}
+
+.app.modal-open .main {
+	transform: none !important;
 }
