@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 
 function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 
@@ -99,9 +99,7 @@ function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 		}
 	}
 
-	const categoryOptions = useMemo(() => {
-		return (categories || []).filter(Boolean)
-	}, [categories])
+	const categoryOptions = (categories || []).filter(Boolean)
 
 	const toggleCategory = (cat) => {
 		setLocalError("")
@@ -147,7 +145,7 @@ function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 								<h3 className="modal-title">Add Book</h3>
 								<div className="modal-subtitle">Add a new title to your library</div>
 							</div>
-							<button className="modal-close" onClick={onClose} aria-label="Close">
+							<button type="button" className="modal-close" onClick={onClose} aria-label="Close">
 								×
 							</button>
 						</div>
@@ -227,10 +225,10 @@ function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 						</div>
 
 						<div className="modal-actions modal-actions-row">
-							<button className="cancel" onClick={onClose} disabled={submitting}>
+							<button type="button" className="cancel" onClick={onClose} disabled={submitting}>
 								Cancel
 							</button>
-							<button className="primary" onClick={handleSubmit} disabled={submitting}>
+							<button type="button" className="primary" onClick={handleSubmit} disabled={submitting}>
 								{submitting ? "Adding..." : "Add Book"}
 							</button>
 						</div>

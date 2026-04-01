@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 
 function EditBookModal({ isOpen, onClose, book, onSave, categories = [] }) {
 
@@ -28,6 +28,8 @@ function EditBookModal({ isOpen, onClose, book, onSave, categories = [] }) {
 			})
 		}
 	}, [book])
+
+	const categoryOptions = (categories || []).filter(Boolean)
 
 	if (!isOpen || !book) return null
 
@@ -80,8 +82,6 @@ function EditBookModal({ isOpen, onClose, book, onSave, categories = [] }) {
 			setSubmitting(false)
 		}
 	}
-
-	const categoryOptions = useMemo(() => (categories || []).filter(Boolean), [categories])
 
 	return (
 		<div className="modal-overlay" onClick={onClose}>
@@ -154,10 +154,10 @@ function EditBookModal({ isOpen, onClose, book, onSave, categories = [] }) {
 				</div>
 
 				<div className="modal-actions">
-					<button className="primary" onClick={handleSubmit} disabled={submitting}>
+					<button type="button" className="primary" onClick={handleSubmit} disabled={submitting}>
 						{submitting ? "Saving..." : "Save Changes"}
 					</button>
-					<button className="cancel" onClick={onClose} disabled={submitting}>
+					<button type="button" className="cancel" onClick={onClose} disabled={submitting}>
 						Cancel
 					</button>
 				</div>

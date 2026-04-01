@@ -436,12 +436,14 @@ function Books() {
 						onChange={(e) => setSearch(e.target.value)}
 					/>
 					<button
+						type="button"
 						className="btn filter-btn"
 						onClick={() => setFiltersOpen((v) => !v)}
 					>
 						Filter
 					</button>
 					<button
+						type="button"
 						className="primary"
 						onClick={() => setAddOpen(true)}
 					>
