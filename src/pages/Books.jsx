@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import BookDetailsModal from "./BookDetailsModal"
 import AddBookModal from "./AddBookModal"
+import EditBookModal from "./EditBookModal"
 import { supabase } from "../lib/supabaseClient"
 
 
@@ -8,9 +9,12 @@ function Books() {
 
 	const [selectedBook, setSelectedBook] = useState(null)
 	const [addOpen, setAddOpen] = useState(false)
+	const [editOpen, setEditOpen] = useState(false)
+	const [editBook, setEditBook] = useState(null)
 	const [search, setSearch] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState("")
+
 
 	const [books, setBooks] = useState([])
 
@@ -35,9 +39,7 @@ function Books() {
 					.map((ba) => ba?.authors?.name)
 					.filter(Boolean)
 				const author = authorNames.length ? authorNames.join(", ") : "Unknown"
-				const date = b.publication_year
-					? `Published: ${b.publication_year}`
-					: ""
+				const date = b.publication_year ? `Published: ${b.publication_year}` : ""
 
 				return {
 					id: b.id,
@@ -45,6 +47,8 @@ function Books() {
 					author,
 					date,
 					image: b.cover_url || placeholderCover,
+					publicationYear: b.publication_year ?? null,
+					coverUrl: b.cover_url ?? "",
 				}
 			})
 
@@ -175,6 +179,119 @@ function Books() {
 		}
 	}
 
+	const handleEditOpen = (book) => {
+		if (!book) return
+		setSelectedBook(null)
+		setEditBook({
+			...book,
+			date: book.publicationYear != null ? String(book.publicationYear) : "",
+			image: book.coverUrl || "",
+		})
+		setEditOpen(true)
+	}
+
+	const handleSaveBook = async (updatedBook) => {
+		setError("")
+		setLoading(true)
+		try {
+			const title = (updatedBook?.name || "").trim()
+			const authorName = (updatedBook?.author || "").trim()
+			const coverUrl = (updatedBook?.image || "").trim()
+			const coverFile = updatedBook?.coverFile ?? null
+			const rawYear = (updatedBook?.date || "").trim()
+			const publicationYear = rawYear ? Number.parseInt(rawYear, 10) : null
+
+			if (!title) {
+				throw new Error("Book name is required")
+			}
+
+			if (!Number.isFinite(publicationYear)) {
+				throw new Error("Publication year is required")
+			}
+
+			const coverUrlForDb = coverUrl.startsWith("data:") ? "" : coverUrl
+
+			const { error: updateBookError } = await supabase
+				.from("books")
+				.update({
+					title,
+					publication_year: publicationYear,
+					cover_url: coverUrlForDb || null,
+				})
+				.eq("id", updatedBook.id)
+
+			if (updateBookError) throw new Error(updateBookError.message)
+
+			if (authorName) {
+				const { data: authorRow, error: authorError } = await supabase
+					.from("authors")
+					.upsert({ name: authorName }, { onConflict: "name" })
+					.select("id")
+					.single()
+
+				if (authorError) throw new Error(authorError.message)
+
+				const { error: linkError } = await supabase
+					.from("book_authors")
+					.upsert(
+						{
+							book_id: updatedBook.id,
+							author_id: authorRow.id,
+						},
+						{ onConflict: "book_id,author_id" }
+					)
+
+				if (linkError) throw new Error(linkError.message)
+			}
+
+			if (!coverUrlForDb && coverFile) {
+				const fileExt = (coverFile.name || "").split(".").pop() || "png"
+				const fileId =
+					typeof crypto !== "undefined" && crypto.randomUUID
+						? crypto.randomUUID()
+						: `${Date.now()}`
+				const filePath = `${updatedBook.id}/${fileId}.${fileExt}`
+
+				const { error: uploadError } = await supabase.storage
+					.from("book-covers")
+					.upload(filePath, coverFile, {
+						upsert: true,
+						contentType: coverFile.type || undefined,
+					})
+
+				if (uploadError) {
+					throw new Error(
+						uploadError.message || "Cover upload failed. Please try again."
+					)
+				}
+
+				const { data: publicData } = supabase.storage
+					.from("book-covers")
+					.getPublicUrl(filePath)
+
+				const publicUrl = publicData?.publicUrl || ""
+				if (!publicUrl) {
+					throw new Error("Cover upload succeeded, but URL generation failed")
+				}
+
+				const { error: updateCoverError } = await supabase
+					.from("books")
+					.update({ cover_url: publicUrl })
+					.eq("id", updatedBook.id)
+
+				if (updateCoverError) throw new Error(updateCoverError.message)
+			}
+
+			await loadBooks()
+			return { success: true }
+		} catch (e) {
+			setError(e?.message || "Unable to save book")
+			return { success: false, message: e?.message || "Unable to save book" }
+		} finally {
+			setLoading(false)
+		}
+	}
+
 	return (
 		<div className="page">
 
@@ -228,12 +345,23 @@ function Books() {
 				book={selectedBook}
 				role="admin" 
 				onClose={() => setSelectedBook(null)}
+				onEdit={handleEditOpen}
 			/>
 
 			<AddBookModal
 				isOpen={addOpen}
 				onClose={() => setAddOpen(false)}
 				onAdd={handleAddBook}
+			/>
+
+			<EditBookModal
+				isOpen={editOpen}
+				book={editBook}
+				onClose={() => {
+					setEditOpen(false)
+					setEditBook(null)
+				}}
+				onSave={handleSaveBook}
 			/>
 
 		</div>

@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom"
 import { useEffect } from "react"
 
-function BookDetailsModal({ isOpen, onClose, book, role, onBorrow }) {
+function BookDetailsModal({ isOpen, onClose, book, role, onBorrow, onEdit }) {
 
 	useEffect(() => {
 		const handleEsc = (e) => {
@@ -34,7 +34,9 @@ function BookDetailsModal({ isOpen, onClose, book, role, onBorrow }) {
 
 							{role === "admin" && (
 								<>
-									<button className="primary">Edit</button>
+									<button className="primary" onClick={() => onEdit?.(book)}>
+										Edit
+									</button>
 									<button className="btn delete">Delete</button>
 								</>
 							)}
