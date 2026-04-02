@@ -1623,7 +1623,6 @@ button.primary:focus-visible {
 	box-shadow: var(--shadow-hover);
 	border-color: rgba(46, 125, 50, 0.20);
 }
-
 .book-card:active {
 	transform: translateY(-1px) scale(0.99);
 }
@@ -1631,8 +1630,11 @@ button.primary:focus-visible {
 .book-card img {
 	width: 100%;
 	height: 240px;
-	object-fit: cover;
-	background: #f2f3f5;
+	object-fit: contain;
+	object-position: center;
+	background: linear-gradient(180deg, rgba(242,243,245,0.9), rgba(255,255,255,0.85));
+	padding: 10px;
+	box-sizing: border-box;
 }
 
 .book-info {
