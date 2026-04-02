@@ -1,5 +1,5 @@
-import { userDashboardDummy } from "../data/userDashboardDummy"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { supabase } from "../lib/supabaseClient"
 
 function formatValue(kpi) {
 	if (kpi.format === "currency") {
@@ -32,13 +32,161 @@ function createPath(values, width, height, padding) {
 }
 
 function UserDashboard() {
-	const { kpis, readingActivity, myRecentActivity, recommendations, popularBooks } =
-		userDashboardDummy
 	const [activeTab, setActiveTab] = useState("recommended")
+	const [recommended, setRecommended] = useState([])
+	const [popular, setPopular] = useState([])
+	const [kpis, setKpis] = useState([])
+	const [readingActivity, setReadingActivity] = useState({
+		labels: [],
+		series: { borrowed: [], returned: [] },
+	})
+	const [myRecentActivity, setMyRecentActivity] = useState([])
+	const [error, setError] = useState("")
 
 	const rightPanelBooks = useMemo(() => {
-		return activeTab === "popular" ? popularBooks : recommendations
-	}, [activeTab, popularBooks, recommendations])
+		return activeTab === "popular" ? popular : recommended
+	}, [activeTab, popular, recommended])
+
+	useEffect(() => {
+		const load = async () => {
+			setError("")
+			try {
+				const { data, error: booksError } = await supabase
+					.from("books")
+					.select("id, title, created_at, book_authors(authors(name))")
+					.order("created_at", { ascending: false })
+					.limit(30)
+				if (booksError) throw new Error(booksError.message)
+
+				const mapped = (data || []).map((b) => {
+					const authorNames = (b.book_authors || [])
+						.map((ba) => ba?.authors?.name)
+						.filter(Boolean)
+					return {
+						title: b.title,
+						author: authorNames.length ? authorNames.join(", ") : "Unknown",
+						status: "Available",
+					}
+				})
+
+				setRecommended(mapped.slice(0, 5))
+				setPopular(mapped.slice(5, 10))
+			} catch (e) {
+				setError(e?.message || "Unable to load books")
+			}
+		}
+
+		void load()
+	}, [])
+
+	useEffect(() => {
+		const loadLoans = async () => {
+			setError("")
+			try {
+				const {
+					data: { user },
+					error: userError,
+				} = await supabase.auth.getUser()
+				if (userError) throw new Error(userError.message)
+				if (!user) throw new Error("You must be logged in")
+
+				const { data, error: loansError } = await supabase
+					.from("loans")
+					.select(
+						"id, checked_out_at, due_at, returned_at, copy_id, copies:copy_id(id, books(title))"
+					)
+					.eq("user_id", user.id)
+					.order("checked_out_at", { ascending: false })
+					.limit(50)
+				if (loansError) throw new Error(loansError.message)
+
+				const now = new Date()
+				const nowMs = now.getTime()
+				const dayMs = 24 * 60 * 60 * 1000
+				const dueSoonThresholdMs = nowMs + 3 * dayMs
+
+				const loans = data || []
+				const activeLoans = loans.filter((l) => !l?.returned_at)
+				const borrowedNow = activeLoans.length
+				let dueSoon = 0
+				let overdue = 0
+				for (const l of activeLoans) {
+					if (!l?.due_at) continue
+					const dueMs = new Date(l.due_at).getTime()
+					if (Number.isNaN(dueMs)) continue
+					if (dueMs < nowMs) overdue += 1
+					else if (dueMs <= dueSoonThresholdMs) dueSoon += 1
+				}
+
+				setKpis([
+					{ id: "borrowedNow", label: "Borrowed Now", value: borrowedNow, delta: 0, deltaType: "up" },
+					{ id: "dueSoon", label: "Due Soon", value: dueSoon, delta: 0, deltaType: "up" },
+					{ id: "overdue", label: "Overdue", value: overdue, delta: 0, deltaType: "down" },
+					{ id: "finesDue", label: "Fines Due", value: 0, delta: 0, deltaType: "up", format: "currency" },
+				])
+
+				const last7Labels = []
+				const borrowedSeries = []
+				const returnedSeries = []
+				for (let i = 6; i >= 0; i -= 1) {
+					const d = new Date(nowMs - i * dayMs)
+					last7Labels.push(
+						d.toLocaleDateString(undefined, { weekday: "short" })
+					)
+					const yyyy = d.getFullYear()
+					const mm = d.getMonth()
+					const dd = d.getDate()
+					const start = new Date(yyyy, mm, dd).getTime()
+					const end = start + dayMs
+					borrowedSeries.push(
+						loans.filter((l) => {
+							if (!l?.checked_out_at) return false
+							const t = new Date(l.checked_out_at).getTime()
+							return !Number.isNaN(t) && t >= start && t < end
+						}).length
+					)
+					returnedSeries.push(
+						loans.filter((l) => {
+							if (!l?.returned_at) return false
+							const t = new Date(l.returned_at).getTime()
+							return !Number.isNaN(t) && t >= start && t < end
+						}).length
+					)
+				}
+
+				setReadingActivity({
+					labels: last7Labels,
+					series: {
+						borrowed: borrowedSeries,
+						returned: returnedSeries,
+					},
+				})
+
+				const recent = loans.slice(0, 10).map((l) => {
+					const title = l?.copies?.books?.title || "Unknown"
+					const action = l?.returned_at ? "Returned" : "Borrowed"
+					const actionDate = l?.returned_at
+						? new Date(l.returned_at).toLocaleDateString()
+						: l?.checked_out_at
+							? new Date(l.checked_out_at).toLocaleDateString()
+							: "-"
+					const due = l?.due_at ? new Date(l.due_at).toLocaleDateString() : "-"
+					return {
+						id: `#L-${l.id}`,
+						title,
+						action,
+						date: actionDate,
+						due,
+					}
+				})
+				setMyRecentActivity(recent)
+			} catch (e) {
+				setError(e?.message || "Unable to load loans")
+			}
+		}
+
+		void loadLoans()
+	}, [])
 
 	const chartW = 560
 	const chartH = 220
@@ -58,6 +206,7 @@ function UserDashboard() {
 
 	return (
 		<div className="dashboard">
+			{error ? <p className="login-error">{error}</p> : null}
 			<div className="kpi-grid">
 				{kpis.map((kpi) => {
 					const deltaClass = kpi.deltaType === "down" ? "red" : "green"

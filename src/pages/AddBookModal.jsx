@@ -14,6 +14,7 @@ function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 
 	const [localError, setLocalError] = useState("")
 	const [submitting, setSubmitting] = useState(false)
+	const [newCategory, setNewCategory] = useState("")
 
 	if (!isOpen) return null
 
@@ -109,6 +110,23 @@ function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 			else next.add(cat)
 			return { ...prev, categories: Array.from(next) }
 		})
+	}
+
+	const addCategoriesFromInput = () => {
+		const raw = (newCategory || "").trim()
+		if (!raw) return
+		const parts = raw
+			.split(",")
+			.map((p) => p.trim())
+			.filter(Boolean)
+		if (!parts.length) return
+		setLocalError("")
+		setForm((prev) => {
+			const next = new Set(prev.categories || [])
+			for (const p of parts) next.add(p)
+			return { ...prev, categories: Array.from(next) }
+		})
+		setNewCategory("")
 	}
 
 	return (
@@ -220,6 +238,23 @@ function AddBookModal({ isOpen, onClose, onAdd, categories = [] }) {
 									) : (
 										<div className="muted">No categories yet</div>
 									)}
+								</div>
+								<div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+									<input
+										type="text"
+										value={newCategory}
+										onChange={(e) => setNewCategory(e.target.value)}
+										placeholder="Add category (comma-separated)"
+										disabled={submitting}
+									/>
+									<button
+										type="button"
+										className="btn"
+										onClick={addCategoriesFromInput}
+										disabled={submitting}
+									>
+										Add
+									</button>
 								</div>
 							</div>
 						</div>
