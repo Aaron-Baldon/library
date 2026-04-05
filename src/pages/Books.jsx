@@ -516,33 +516,12 @@ function Books() {
 		setError("")
 		setLoading(true)
 		try {
-			const { data: copies, error: copiesError } = await supabase
-				.from("book_copies")
-				.select("id")
-				.eq("book_id", book.id)
-			if (copiesError) throw new Error(copiesError.message)
-
-			const copyIds = (copies || []).map((c) => c.id).filter(Boolean)
-			if (copyIds.length) {
-				const { count: loanCount, error: loanError } = await supabase
-					.from("loans")
-					.select("id", { count: "exact", head: true })
-					.in("copy_id", copyIds)
-				if (loanError) throw new Error(loanError.message)
-				if ((loanCount || 0) > 0) {
-					throw new Error("Cannot delete: this book has loan history. Remove related loans/copies first.")
-				}
-			}
-
-			await supabase.from("book_categories").delete().eq("book_id", book.id)
-			await supabase.from("book_authors").delete().eq("book_id", book.id)
-			await supabase.from("book_copies").delete().eq("book_id", book.id)
-
-			const { error: deleteError } = await supabase
-				.from("books")
-				.delete()
-				.eq("id", book.id)
-			if (deleteError) throw new Error(deleteError.message)
+			const bookId = Number(book.id)
+			if (!Number.isFinite(bookId)) throw new Error("Invalid book")
+			const { error: rpcError } = await supabase.rpc("admin_delete_book", {
+				p_book_id: bookId,
+			})
+			if (rpcError) throw new Error(rpcError.message)
 
 			setSelectedBook(null)
 			setBooks((prev) => prev.filter((b) => b.id !== book.id))
