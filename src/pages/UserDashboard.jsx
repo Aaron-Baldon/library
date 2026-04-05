@@ -36,12 +36,14 @@ function UserDashboard() {
 	const [recommended, setRecommended] = useState([])
 	const [popular, setPopular] = useState([])
 	const [kpis, setKpis] = useState([])
+	const [nowTick, setNowTick] = useState(() => Date.now())
 	const [readingActivity, setReadingActivity] = useState({
 		labels: [],
 		series: { borrowed: [], returned: [] },
 	})
 	const [myRecentActivity, setMyRecentActivity] = useState([])
 	const [error, setError] = useState("")
+	const [loansSnapshot, setLoansSnapshot] = useState([])
 
 	const rightPanelBooks = useMemo(() => {
 		return activeTab === "popular" ? popular : recommended
@@ -99,6 +101,7 @@ function UserDashboard() {
 					.order("checked_out_at", { ascending: false })
 					.limit(50)
 				if (loansError) throw new Error(loansError.message)
+				setLoansSnapshot(data || [])
 
 				const now = new Date()
 				const nowMs = now.getTime()
@@ -187,6 +190,34 @@ function UserDashboard() {
 
 		void loadLoans()
 	}, [])
+
+	useEffect(() => {
+		const id = window.setInterval(() => setNowTick(Date.now()), 60 * 1000)
+		return () => window.clearInterval(id)
+	}, [])
+
+	useEffect(() => {
+		if (!loansSnapshot?.length) return
+		const dayMs = 24 * 60 * 60 * 1000
+		const nowMs = nowTick
+		let finesDue = 0
+		for (const l of loansSnapshot) {
+			if (l?.returned_at) continue
+			if (!l?.due_at) continue
+			const dueMs = new Date(l.due_at).getTime()
+			if (Number.isNaN(dueMs)) continue
+			const diffMs = nowMs - dueMs
+			if (diffMs <= 0) continue
+			const overdueDays = Math.ceil(diffMs / dayMs)
+			finesDue += overdueDays * 5
+		}
+
+		setKpis((prev) =>
+			(prev || []).map((k) =>
+				k.id === "finesDue" ? { ...k, value: finesDue, format: "currency" } : k
+			)
+		)
+	}, [loansSnapshot, nowTick])
 
 	const chartW = 560
 	const chartH = 220

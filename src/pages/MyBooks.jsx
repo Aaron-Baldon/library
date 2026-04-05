@@ -16,6 +16,7 @@ function MyBooks() {
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState("")
 	const [books, setBooks] = useState([])
+	const [nowTick, setNowTick] = useState(() => Date.now())
 
 	useEffect(() => {
 		const q = searchParams.get("q") || ""
@@ -45,6 +46,7 @@ function MyBooks() {
 		if (!dueAt) return ""
 		try {
 			const d = new Date(dueAt)
+
 			const pretty = d.toLocaleDateString(undefined, {
 				year: "numeric",
 				month: "long",
@@ -53,6 +55,32 @@ function MyBooks() {
 			return `Due: ${pretty}`
 		} catch {
 			return ""
+		}
+	}
+
+	const getFineAmount = (dueAt, returnedAt) => {
+		if (!dueAt) return 0
+		const dueMs = new Date(dueAt).getTime()
+		if (Number.isNaN(dueMs)) return 0
+		const endMs = returnedAt ? new Date(returnedAt).getTime() : nowTick
+		if (Number.isNaN(endMs)) return 0
+		const diffMs = endMs - dueMs
+		if (diffMs <= 0) return 0
+		const dayMs = 24 * 60 * 60 * 1000
+		const overdueDays = Math.ceil(diffMs / dayMs)
+		return overdueDays * 5
+	}
+
+	const formatFine = (amount) => {
+		if (!amount) return ""
+		try {
+			return new Intl.NumberFormat(undefined, {
+				style: "currency",
+				currency: "PHP",
+				maximumFractionDigits: 0,
+			}).format(amount)
+		} catch {
+			return `₱${amount}`
 		}
 	}
 
@@ -124,6 +152,11 @@ function MyBooks() {
 		void loadMyLoans()
 	}, [])
 
+	useEffect(() => {
+		const id = window.setInterval(() => setNowTick(Date.now()), 60 * 1000)
+		return () => window.clearInterval(id)
+	}, [])
+
 	const handleReturn = async (book) => {
 		if (!book?.loanId) return
 		setError("")
@@ -186,6 +219,17 @@ function MyBooks() {
 		})
 	}, [books, searchTerm, authorFilter, categoryFilter])
 
+	const booksWithFines = useMemo(() => {
+		return filteredBooks.map((b) => {
+			const fineAmount = getFineAmount(b.dueAt, b.returnedAt)
+			return {
+				...b,
+				fineAmount,
+				fineText: fineAmount ? `Fine: ${formatFine(fineAmount)}` : "",
+			}
+		})
+	}, [filteredBooks, nowTick])
+
 	return (
 		<div className="page">
 
@@ -203,7 +247,7 @@ function MyBooks() {
 						onChange={(e) => setSearchTerm(e.target.value)}
 					/>
 					<button
-						className="btn filter-btn"
+						className={`btn filter-btn ${filtersOpen ? "active" : ""}`}
 						onClick={() => setFiltersOpen((v) => !v)}
 					>
 						Filter
@@ -211,63 +255,62 @@ function MyBooks() {
 				</div>
 			</div>
 
-			{filtersOpen ? (
-				<div className="filters-panel">
-					<div className="filters-row">
-						<div className="filter-field">
-							<label>Author</label>
-							<select
-								value={authorFilter}
-								onChange={(e) => setAuthorFilter(e.target.value)}
-							>
-								<option value="">All</option>
-								{authors.map((a) => (
-									<option key={a} value={a}>
-										{a}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div className="filter-field">
-							<label>Category</label>
-							<select
-								value={categoryFilter}
-								onChange={(e) => setCategoryFilter(e.target.value)}
-							>
-								<option value="">All</option>
-								{categories.map((c) => (
-									<option key={c} value={c}>
-										{c}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<button
-							className="btn"
-							onClick={() => {
-								setAuthorFilter("")
-								setCategoryFilter("")
-							}}
+			<div className={`filters-panel animated ${filtersOpen ? "open" : ""}`}>
+				<div className="filters-row">
+					<div className="filter-field">
+						<label>Author</label>
+						<select
+							value={authorFilter}
+							onChange={(e) => setAuthorFilter(e.target.value)}
 						>
-							Clear
-						</button>
+							<option value="">All</option>
+							{authors.map((a) => (
+								<option key={a} value={a}>
+									{a}
+								</option>
+							))}
+						</select>
 					</div>
+
+					<div className="filter-field">
+						<label>Category</label>
+						<select
+							value={categoryFilter}
+							onChange={(e) => setCategoryFilter(e.target.value)}
+						>
+							<option value="">All</option>
+							{categories.map((c) => (
+								<option key={c} value={c}>
+									{c}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<button
+						className="btn"
+						onClick={() => {
+							setAuthorFilter("")
+							setCategoryFilter("")
+						}}
+					>
+						Clear
+					</button>
 				</div>
-			) : null}
+			</div>
 
 			{error ? <p className="login-error">{error}</p> : null}
 
 			{/* GRID */}
 			<div className="books-grid">
+
 				{loading ? (
 					<div style={{ padding: 10, color: "#666" }}>Loading your books...</div>
 				) : null}
 				{!loading && !filteredBooks.length ? (
 					<div className="books-empty">No borrowed books found.</div>
 				) : null}
-				{filteredBooks.map((book, i) => (
+				{booksWithFines.map((book, i) => (
 					<div 
 						className="book-card" 
 						key={book.loanId ?? book.id ?? i}
@@ -284,6 +327,9 @@ function MyBooks() {
 						<div className="book-info">
 							<h4>{book.name}</h4>
 							<p>{book.author}</p>
+							{book.fineAmount ? (
+								<span className="badge red">{book.fineText}</span>
+							) : null}
 							{book.categories?.length ? (
 								<div className="book-tags">
 									{book.categories.slice(0, 2).map((c) => (

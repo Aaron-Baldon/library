@@ -501,8 +501,9 @@ function Books() {
 			await loadBooks()
 			return { success: true }
 		} catch (e) {
-			setError(e?.message || "Unable to save book")
-			return { success: false, message: e?.message || "Unable to save book" }
+			const msg = e?.message || "Unable to save book"
+			setError(msg)
+			return { success: false, message: msg }
 		} finally {
 			setLoading(false)
 		}
@@ -538,7 +539,6 @@ function Books() {
 
 	return (
 		<div className="page">
-
 			<div className="page-header">
 				<div>
 					<h2>Books</h2>
@@ -553,7 +553,7 @@ function Books() {
 					/>
 					<button
 						type="button"
-						className="btn filter-btn"
+						className={`btn filter-btn ${filtersOpen ? "active" : ""}`}
 						onClick={() => setFiltersOpen((v) => !v)}
 					>
 						Filter
@@ -568,56 +568,53 @@ function Books() {
 				</div>
 			</div>
 
-			{filtersOpen ? (
-				<div className="filters-panel">
-					<div className="filters-row">
-						<div className="filter-field">
-							<label>Author</label>
-							<select
-								value={authorFilter}
-								onChange={(e) => setAuthorFilter(e.target.value)}
-							>
-								<option value="">All</option>
-								{authorOptions.map((a) => (
-									<option key={a} value={a}>
-										{a}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div className="filter-field">
-							<label>Category</label>
-							<select
-								value={categoryFilter}
-								onChange={(e) => setCategoryFilter(e.target.value)}
-							>
-								<option value="">All</option>
-								{categoryOptions.map((c) => (
-									<option key={c} value={c}>
-										{c}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<button
-							className="btn"
-							onClick={() => {
-								setAuthorFilter("")
-								setCategoryFilter("")
-							}}
+			<div className={`filters-panel animated ${filtersOpen ? "open" : ""}`}>
+				<div className="filters-row">
+					<div className="filter-field">
+						<label>Author</label>
+						<select
+							value={authorFilter}
+							onChange={(e) => setAuthorFilter(e.target.value)}
 						>
-							Clear
-						</button>
+							<option value="">All</option>
+							{authorOptions.map((a) => (
+								<option key={a} value={a}>
+									{a}
+								</option>
+							))}
+						</select>
 					</div>
+
+					<div className="filter-field">
+						<label>Category</label>
+						<select
+							value={categoryFilter}
+							onChange={(e) => setCategoryFilter(e.target.value)}
+						>
+							<option value="">All</option>
+							{categoryOptions.map((c) => (
+								<option key={c} value={c}>
+									{c}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<button
+						className="btn"
+						onClick={() => {
+							setAuthorFilter("")
+							setCategoryFilter("")
+						}}
+					>
+						Clear
+					</button>
 				</div>
-			) : null}
+			</div>
 
 			{error ? <p className="login-error">{error}</p> : null}
 
 			<div className="books-grid">
-
 				{loading ? (
 					<div style={{ padding: 10, color: "#666" }}>Loading books...</div>
 				) : null}
@@ -682,7 +679,6 @@ function Books() {
 				onSave={handleSaveBook}
 				categories={categoryOptions}
 			/>
-
 		</div>
 	)
 }
