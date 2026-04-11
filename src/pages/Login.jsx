@@ -28,12 +28,24 @@ function Login() {
 
 		const { data: profile, error: profileError } = await supabase
 			.from("profiles")
-			.select("id, roles(name)")
+			.select("id, full_name, roles(name)")
 			.eq("id", user.id)
 			.maybeSingle()
 
-		if (profileError) {
-			throw new Error(profileError.message)
+		if (profileError) throw new Error(profileError.message)
+
+		const fullNameFromMeta = user.user_metadata?.full_name
+		const profileName = String(profile?.full_name || "").trim()
+		const metaName = String(fullNameFromMeta || "").trim()
+		if (!profile || (!profileName && metaName)) {
+			const { error: upsertError } = await supabase
+				.from("profiles")
+				.upsert({
+					id: user.id,
+					full_name: metaName || null,
+					updated_at: new Date().toISOString(),
+				})
+			if (upsertError) throw new Error(upsertError.message)
 		}
 
 		const roleName = profile?.roles?.name

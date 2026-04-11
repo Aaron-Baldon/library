@@ -208,22 +208,29 @@ function Books() {
 
 			if (upsertBookError) throw new Error(upsertBookError.message)
 
-			const { data: existingCopy, error: existingCopyError } = await supabase
+			const { data: existingCopies, error: existingCopiesError } = await supabase
 				.from("book_copies")
 				.select("id")
 				.eq("book_id", upsertedBook.id)
-				.limit(1)
-				.maybeSingle()
-			if (existingCopyError) throw new Error(existingCopyError.message)
-			if (!existingCopy) {
-				const barcodeBase =
-					typeof crypto !== "undefined" && crypto.randomUUID
-						? crypto.randomUUID()
-						: `${Date.now()}-${Math.random().toString(16).slice(2)}`
-				const barcode = `BC-${upsertedBook.id}-${barcodeBase}`
+			if (existingCopiesError) throw new Error(existingCopiesError.message)
+
+			const desiredCopies = 5
+			const currentCopies = Array.isArray(existingCopies) ? existingCopies.length : 0
+			const missingCopies = Math.max(0, desiredCopies - currentCopies)
+			if (missingCopies > 0) {
+				const rows = Array.from({ length: missingCopies }).map(() => {
+					const barcodeBase =
+						typeof crypto !== "undefined" && crypto.randomUUID
+							? crypto.randomUUID()
+							: `${Date.now()}-${Math.random().toString(16).slice(2)}`
+					return {
+						book_id: upsertedBook.id,
+						barcode: `BC-${upsertedBook.id}-${barcodeBase}`,
+					}
+				})
 				const { error: createCopyError } = await supabase
 					.from("book_copies")
-					.insert({ book_id: upsertedBook.id, barcode })
+					.insert(rows)
 				if (createCopyError) throw new Error(createCopyError.message)
 			}
 

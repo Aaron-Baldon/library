@@ -47,7 +47,7 @@ function BrowseBooks() {
 			const { data, error: booksError } = await supabase
 				.from("books")
 				.select(
-					"id, title, publication_year, cover_url, book_authors(authors(name)), book_categories(categories(name))"
+					"id, title, publication_year, cover_url, book_authors(authors(name)), book_categories(categories(name)), book_copies(id, loans(returned_at))"
 				)
 				.order("created_at", { ascending: false })
 
@@ -64,6 +64,14 @@ function BrowseBooks() {
 					.map((bc) => bc?.categories?.name)
 					.filter(Boolean)
 
+				const copies = Array.isArray(b.book_copies) ? b.book_copies : []
+				const totalCopies = copies.length
+				const checkedOutCopies = copies.filter((c) => {
+					const loans = Array.isArray(c?.loans) ? c.loans : []
+					return loans.some((l) => !l?.returned_at)
+				}).length
+				const availableCopies = Math.max(0, totalCopies - checkedOutCopies)
+
 				return {
 					id: b.id,
 					name: b.title,
@@ -71,6 +79,8 @@ function BrowseBooks() {
 					date,
 					image: b.cover_url || "",
 					categories: categoryNames,
+					totalCopies,
+					availableCopies,
 				}
 			})
 
@@ -86,6 +96,12 @@ function BrowseBooks() {
 
 	const borrowBook = async (book) => {
 		if (!book?.id) return
+		if (Number.isFinite(book?.availableCopies) && book.availableCopies <= 0) {
+			const msg = "No copies available"
+			setError(msg)
+			toast.error(msg)
+			return
+		}
 		const bookId = Number(book.id)
 		if (!Number.isFinite(bookId)) {
 			const msg = "Invalid book id"
@@ -111,6 +127,7 @@ function BrowseBooks() {
 			if (!data || !data.length) throw new Error("No copies available")
 
 			setSelectedBook(null)
+			await loadBooks()
 			toast.success("Book borrowed")
 		} catch (e) {
 			const msg = e?.message || "Unable to borrow book"
@@ -249,6 +266,11 @@ function BrowseBooks() {
 						<div className="book-info">
 							<h4>{book.name}</h4>
 							<p>{book.author}</p>
+							{Number.isFinite(book?.totalCopies) ? (
+								<span className={`badge ${book.availableCopies > 0 ? "green" : "red"}`}>
+									{book.availableCopies}/{book.totalCopies} available
+								</span>
+							) : null}
 							{book.categories?.length ? (
 								<div className="book-tags">
 									{book.categories.slice(0, 2).map((c) => (

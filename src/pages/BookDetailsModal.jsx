@@ -83,8 +83,19 @@ function BookDetailsModal({ isOpen, onClose, book, role, onBorrow, onReturn, onE
 									type="button"
 									className="primary"
 									onClick={() => onBorrow(book)}
+									disabled={
+										Number.isFinite(book?.availableCopies) &&
+										book.availableCopies <= 0
+									}
+									title={
+										Number.isFinite(book?.availableCopies) && book.availableCopies <= 0
+											? "No copies available"
+											: ""
+									}
 								>
-									Borrow Book
+									{Number.isFinite(book?.availableCopies) && book.availableCopies <= 0
+										? "Out of stock"
+										: "Borrow Book"}
 								</button>
 							)}
 
