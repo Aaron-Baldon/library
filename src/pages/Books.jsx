@@ -135,24 +135,6 @@ function Books() {
 		return Array.from(set).sort((a, b) => a.localeCompare(b))
 	}, [books, categories])
 
-	const filteredBooks = useMemo(() => {
-		const q = search.trim().toLowerCase()
-		if (!q) return books
-		return books
-			.filter((b) => {
-				const hay = `${b.name} ${b.author}`.toLowerCase()
-				return hay.includes(q)
-			})
-			.filter((b) => {
-				if (authorFilter && b.author !== authorFilter) return false
-				if (categoryFilter) {
-					const bookCats = b.categories || []
-					if (!bookCats.includes(categoryFilter)) return false
-				}
-				return true
-			})
-	}, [books, search])
-
 	const filteredBooksWithFilters = useMemo(() => {
 		const q = search.trim().toLowerCase()
 		return books.filter((b) => {

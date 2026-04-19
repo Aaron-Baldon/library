@@ -42,6 +42,21 @@ function Dashboard() {
 	const [overdueHistory, setOverdueHistory] = useState([])
 	const [recentCheckouts, setRecentCheckouts] = useState([])
 	const [topBooks, setTopBooks] = useState([])
+	const [rangeTick, setRangeTick] = useState(0)
+
+	const getSelectedRange = () => {
+		try {
+			return localStorage.getItem("dashboard_range") || "6m"
+		} catch {
+			return "6m"
+		}
+	}
+
+	useEffect(() => {
+		const onRangeChanged = () => setRangeTick((v) => v + 1)
+		window.addEventListener("dashboardRangeChanged", onRangeChanged)
+		return () => window.removeEventListener("dashboardRangeChanged", onRangeChanged)
+	}, [])
 
 	useEffect(() => {
 		let active = true
@@ -52,6 +67,11 @@ function Dashboard() {
 				const now = new Date()
 				const nowMs = now.getTime()
 				const dayMs = 24 * 60 * 60 * 1000
+				const selectedRange = getSelectedRange()
+				let rangeMs = 183 * dayMs
+				if (selectedRange === "30d") rangeMs = 30 * dayMs
+				if (selectedRange === "7d") rangeMs = 7 * dayMs
+				const rangeStartMs = nowMs - rangeMs
 
 				const last7Dates = []
 				const labels = []
@@ -76,17 +96,29 @@ function Dashboard() {
 				if (booksCountError) throw new Error(booksCountError.message)
 				if (loansError) throw new Error(loansError.message)
 
-				const allLoans = loans || []
+				const allLoansRaw = loans || []
+				// Range-filtered: for Borrowed/Returned KPIs, chart, recent checkouts, top books
+				const allLoans = allLoansRaw.filter((l) => {
+					if (!l?.checked_out_at) return false
+					const t = new Date(l.checked_out_at).getTime()
+					if (Number.isNaN(t)) return false
+					return t >= rangeStartMs && t <= nowMs
+				})
 				const activeLoans = allLoans.filter((l) => !l?.returned_at)
 				const returnedLoans = allLoans.filter((l) => !!l?.returned_at)
-				const overdueLoans = activeLoans.filter((l) => {
+				// Overdue = ALL currently unreturned loans past due, regardless of range
+				const overdueLoans = allLoansRaw.filter((l) => {
+					if (l?.returned_at) return false
 					if (!l?.due_at) return false
 					const dueMs = new Date(l.due_at).getTime()
 					return !Number.isNaN(dueMs) && dueMs < nowMs
 				})
 
 				const uniqueUserIds = Array.from(
-					new Set(allLoans.map((l) => l?.user_id).filter(Boolean))
+					new Set([
+						...allLoans.map((l) => l?.user_id),
+						...overdueLoans.map((l) => l?.user_id),
+					].filter(Boolean))
 				)
 				let profilesById = {}
 				if (uniqueUserIds.length) {
@@ -155,12 +187,32 @@ function Dashboard() {
 						profilesById?.[l.user_id]?.full_name ||
 						String(l.user_id || "-").slice(0, 8)
 					const dueDate = l?.due_at ? new Date(l.due_at).toLocaleDateString() : "-"
+					let fine = "-"
+					if (l?.due_at) {
+						const dueMs = new Date(l.due_at).getTime()
+						if (!Number.isNaN(dueMs)) {
+							const diffMs = nowMs - dueMs
+							if (diffMs > 0) {
+								const overdueDays = Math.ceil(diffMs / dayMs)
+								const fineAmount = overdueDays * 5
+								try {
+									fine = new Intl.NumberFormat(undefined, {
+										style: "currency",
+										currency: "PHP",
+										maximumFractionDigits: 0,
+									}).format(fineAmount)
+								} catch {
+									fine = `₱${fineAmount}`
+								}
+							}
+						}
+					}
 					return {
 						memberId: memberName,
 						title,
 						isbn: "-",
 						dueDate,
-						fine: "-",
+						fine,
 					}
 				})
 
@@ -214,7 +266,7 @@ function Dashboard() {
 		return () => {
 			active = false
 		}
-	}, [])
+	}, [rangeTick])
 
 	const chartW = 560
 	const chartH = 220

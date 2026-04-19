@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabaseClient"
 
 function Navbar({ toggleSidebar }) {
+
 	const navigate = useNavigate()
 	const location = useLocation()
 	const popoverRef = useRef(null)
@@ -12,6 +13,13 @@ function Navbar({ toggleSidebar }) {
 	const [user, setUser] = useState(null)
 	const [profile, setProfile] = useState(null)
 	const [searchValue, setSearchValue] = useState("")
+	const [dashboardRange, setDashboardRange] = useState(() => {
+		try {
+			return localStorage.getItem("dashboard_range") || "6m"
+		} catch {
+			return "6m"
+		}
+	})
 
 	useEffect(() => {
 		let active = true
@@ -169,10 +177,23 @@ function Navbar({ toggleSidebar }) {
 			</div>
 
 			<div className="topbar-right">
-				<select className="range">
-					<option>Last 6 months</option>
-					<option>Last 30 days</option>
-					<option>This week</option>
+				<select
+					className="range"
+					value={dashboardRange}
+					onChange={(e) => {
+						const next = String(e.target.value || "6m")
+						setDashboardRange(next)
+						try {
+							localStorage.setItem("dashboard_range", next)
+						} catch {
+							// ignore
+						}
+						window.dispatchEvent(new Event("dashboardRangeChanged"))
+					}}
+				>
+					<option value="6m">Last 6 months</option>
+					<option value="30d">Last 30 days</option>
+					<option value="7d">This week</option>
 				</select>
 				<button className="icon-btn" aria-label="Notifications">
 					🔔
